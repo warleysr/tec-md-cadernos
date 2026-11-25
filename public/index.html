@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TEC MD — Cadernos de Questões</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Top Navbar estilo TEC Concursos -->
+  <header class="tec-header">
+    <div class="tec-header-left">
+      <div class="tec-logo" id="btnHome" title="Lista de Cadernos">
+        <span class="tec-logo-badge">TEC</span>
+        <span class="tec-logo-text">MD Cadernos</span>
+      </div>
+      <div class="tec-caderno-breadcrumb" id="headerBreadcrumb">
+        <span>Selecione ou importe um caderno</span>
+      </div>
+    </div>
+
+    <div class="tec-header-stats" id="headerStats" style="display:none;">
+      <div class="stat-pill stat-total" title="Total de questões no caderno">
+        <span class="stat-label">Total</span>
+        <strong id="statTotal">0</strong>
+      </div>
+      <div class="stat-pill stat-resolved" title="Questões resolvidas">
+        <span class="stat-label">Resolvidas</span>
+        <strong id="statResolvidas">0</strong>
+      </div>
+      <div class="stat-pill stat-correct" title="Acertos">
+        <span class="stat-label">Acertos</span>
+        <strong id="statAcertos">0</strong>
+      </div>
+      <div class="stat-pill stat-wrong" title="Erros">
+        <span class="stat-label">Erros</span>
+        <strong id="statErros">0</strong>
+      </div>
+      <div class="stat-pill stat-rate" title="Aproveitamento">
+        <span class="stat-label">%</span>
+        <strong id="statTaxa">0%</strong>
+      </div>
+    </div>
+
+    <div class="tec-header-actions">
+      <button class="btn-header" id="btnImportOpen" title="Importar arquivo .md">
+        + Importar MD
+      </button>
+      <button class="btn-header" id="btnStatsOpen" title="Estatísticas gerais">
+        Estatísticas
+      </button>
+      <button class="btn-header" id="btnShortcutsOpen" title="Atalhos de teclado (?)">
+        Atalhos (?)
+      </button>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <main class="tec-main">
+    <!-- Home / Lista de Cadernos -->
+    <section id="viewHome" class="view-home">
+      <div class="home-hero">
+        <div>
+          <h1>Meus Cadernos Markdown</h1>
+          <p>Importe cadernos exportados em <code>.md</code> e resolva com a interface e os atalhos do TEC Concursos.</p>
+        </div>
+        <div class="home-hero-actions">
+          <button class="btn-primary" id="btnHomeImport">+ Importar Caderno (.md)</button>
+        </div>
+      </div>
+
+      <div id="cadernosGrid" class="cadernos-grid"></div>
+    </section>
+
+    <!-- Workspace de Resolução (Interface TEC Concursos) -->
+    <section id="viewSolver" class="view-solver" style="display:none;">
+      <!-- Barra superior de navegação e filtros do caderno -->
+      <div class="solver-toolbar">
+        <div class="toolbar-left">
+          <button class="btn-tool" id="btnBackHome" title="Voltar aos cadernos">← Cadernos</button>
+          <div class="question-counter">
+            Questão <strong id="qCurrentIndex">1</strong> de <strong id="qTotalCount">0</strong>
+            <span class="badge-tec-id" id="qTecIdBadge"></span>
+          </div>
+          <select id="filterMode" class="filter-select" title="Filtrar questões exibidas no índice">
+            <option value="all">Todas (ativas)</option>
+            <option value="unsolved">Não resolvidas</option>
+            <option value="wrong">Apenas erradas</option>
+            <option value="correct">Apenas acertadas</option>
+            <option value="removed">Removidas</option>
+          </select>
+        </div>
+
+        <div class="toolbar-nav">
+          <button class="btn-nav" id="btnPrevQ" title="Questão anterior (←)">
+            ← Anterior
+          </button>
+          <button class="btn-nav btn-nav-accent" id="btnNextUnsolved" title="Próxima questão não resolvida (N)">
+            Próx. não resolvida <kbd>N</kbd>
+          </button>
+          <button class="btn-nav btn-nav-random" id="btnRandomUnsolved" title="Questão aleatória não resolvida (L)">
+            Aleatória não resolvida <kbd>L</kbd>
+          </button>
+          <button class="btn-nav" id="btnNextQ" title="Próxima questão (→)">
+            Seguinte →
+          </button>
+          <button class="btn-nav" id="btnJumpQ" title="Ir para questão específica (P)">
+            Ir p/ <kbd>P</kbd>
+          </button>
+        </div>
+      </div>
+
+      <div class="solver-layout">
+        <!-- Coluna principal da questão -->
+        <div class="question-column">
+          <article class="question-card" id="questionCard">
+            <!-- Cabeçalho da questão estilo TEC -->
+            <div class="q-meta-bar">
+              <div class="q-meta-info">
+                <div class="q-banca" id="qBanca"></div>
+                <div class="q-materia" id="qMateria"></div>
+              </div>
+              <div class="q-meta-actions">
+                <span class="q-status-badge" id="qStatusBadge">Não resolvida</span>
+                <button class="btn-icon-action" id="btnToggleRemove" title="Remover/Restaurar questão do caderno (R)">
+                  Remover <kbd>R</kbd>
+                </button>
+              </div>
+            </div>
+
+            <!-- Abas / Barra de ferramentas da questão estilo TEC -->
+            <div class="q-tabs-bar">
+              <button class="q-tab active" data-tab="questao">Questão</button>
+              <button class="q-tab" data-tab="info">Informações <kbd>I</kbd></button>
+              <button class="q-tab" data-tab="anotacao">Minhas Anotações <kbd>O</kbd></button>
+            </div>
+
+            <!-- Conteúdo da aba Questão -->
+            <div class="q-tab-panel" id="panelQuestao">
+              <div class="q-enunciado" id="qEnunciado"></div>
+
+              <div class="q-alternativas" id="qAlternativas"></div>
+
+              <div class="q-submit-row">
+                <button class="btn-responder" id="btnResponder">
+                  Responder <kbd>Enter</kbd>
+                </button>
+                <div class="q-feedback" id="qFeedback"></div>
+              </div>
+            </div>
+
+            <!-- Conteúdo da aba Informações -->
+            <div class="q-tab-panel" id="panelInfo" style="display:none;">
+              <div class="info-grid" id="qInfoContent"></div>
+            </div>
+
+            <!-- Conteúdo da aba Anotações -->
+            <div class="q-tab-panel" id="panelAnotacao" style="display:none;">
+              <label class="note-label" for="qNoteInput">Anotações pessoais sobre esta questão:</label>
+              <textarea id="qNoteInput" class="note-textarea" rows="6" placeholder="Escreva seus resumos, bizus ou motivos do erro..."></textarea>
+              <div class="note-actions">
+                <button class="btn-primary" id="btnSaveNote">Salvar Anotação</button>
+                <span class="note-saved-msg" id="noteSavedMsg"></span>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- Painel lateral: Índice rápido de questões + Progresso -->
+        <aside class="solver-sidebar">
+          <div class="sidebar-card">
+            <div class="sidebar-header">
+              <h3>Índice do Caderno</h3>
+              <span id="sidebarProgressText">0/0</span>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-correct" id="barCorrect" style="width:0%"></div>
+              <div class="progress-bar-wrong" id="barWrong" style="width:0%"></div>
+            </div>
+            <div class="index-legend">
+              <span><i class="dot dot-correct"></i> Acertos</span>
+              <span><i class="dot dot-wrong"></i> Erros</span>
+              <span><i class="dot dot-unsolved"></i> Não resp.</span>
+            </div>
+            <div class="question-index-grid" id="questionIndexGrid"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Importar MD -->
+  <div class="modal-backdrop" id="modalImport" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>Importar Caderno Markdown (.md)</h2>
+        <button class="modal-close" data-close="modalImport">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="dropzone" id="mdDropzone">
+          <p><strong>Arraste e solte</strong> um arquivo <code>.md</code> aqui</p>
+          <p class="dropzone-sub">ou</p>
+          <label class="btn-primary" style="cursor:pointer;">
+            Selecionar arquivo .md
+            <input type="file" id="mdFileInput" accept=".md,.markdown,.txt" hidden />
+          </label>
+        </div>
+
+        <div class="form-group" style="margin-top:14px;">
+          <label for="importTitleInput">Nome do Caderno (opcional):</label>
+          <input type="text" id="importTitleInput" class="text-input" placeholder="Ex: Banco de Dados - CGU" />
+        </div>
+
+        <div class="workspace-mds-section">
+          <h4>Arquivos .md encontrados no Workspace</h4>
+          <div id="workspaceMdsList" class="workspace-mds-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Estatísticas -->
+  <div class="modal-backdrop" id="modalStats" style="display:none;">
+    <div class="modal-box modal-box-lg">
+      <div class="modal-header">
+        <h2>Estatísticas de Resoluções</h2>
+        <button class="modal-close" data-close="modalStats">&times;</button>
+      </div>
+      <div class="modal-body" id="statsModalBody"></div>
+    </div>
+  </div>
+
+  <!-- Modal Atalhos -->
+  <div class="modal-backdrop" id="modalShortcuts" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>Atalhos de Teclado (Padrão TEC Concursos)</h2>
+        <button class="modal-close" data-close="modalShortcuts">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="shortcuts-list">
+          <div class="shortcut-row"><kbd>L</kbd><span>Questão aleatória não resolvida</span></div>
+          <div class="shortcut-row"><kbd>N</kbd><span>Próxima questão não resolvida</span></div>
+          <div class="shortcut-row"><kbd>→</kbd><span>Questão seguinte</span></div>
+          <div class="shortcut-row"><kbd>←</kbd><span>Questão anterior</span></div>
+          <div class="shortcut-row"><kbd>P</kbd><span>Ir para questão específica (por número)</span></div>
+          <div class="shortcut-row"><kbd>A</kbd> – <kbd>E</kbd> ou <kbd>1</kbd> – <kbd>5</kbd><span>Selecionar alternativa (2x seguida risca/elimina)</span></div>
+          <div class="shortcut-row"><kbd>C</kbd> / <kbd>E</kbd><span>Selecionar Certo / Errado (2x seguida risca/elimina)</span></div>
+          <div class="shortcut-row"><kbd>Enter</kbd><span>Confirmar / Responder questão</span></div>
+          <div class="shortcut-row"><kbd>I</kbd><span>Abrir/Fechar Informações da questão</span></div>
+          <div class="shortcut-row"><kbd>O</kbd><span>Abrir/Fechar Minhas Anotações</span></div>
+          <div class="shortcut-row"><kbd>R</kbd><span>Remover / Restaurar questão do caderno</span></div>
+          <div class="shortcut-row"><kbd>?</kbd><span>Exibir esta tela de atalhos</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ir para questão (P) -->
+  <div class="modal-backdrop" id="modalJump" style="display:none;">
+    <div class="modal-box modal-box-sm">
+      <div class="modal-header">
+        <h2>Ir para questão</h2>
+        <button class="modal-close" data-close="modalJump">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="jumpForm">
+          <label for="jumpInput">Digite o número da questão (1 a <span id="jumpMax">0</span>):</label>
+          <input type="number" id="jumpInput" class="text-input" min="1" style="margin-top:8px;" />
+          <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px;">
+            <button type="button" class="btn-secondary" data-close="modalJump">Cancelar</button>
+            <button type="submit" class="btn-primary">Ir</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notifications -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

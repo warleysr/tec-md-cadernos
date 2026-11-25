@@ -1,0 +1,12 @@
+{
+  "name": "tec-cadernos-app",
+  "version": "1.0.0",
+  "description": "Sistema de resolução de cadernos MD com interface e atalhos do TEC Concursos",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

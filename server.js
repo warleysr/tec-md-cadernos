@@ -453,7 +453,7 @@ app.get('/api/stats/global', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   ensureDb();
-  console.log(`TEC MD Cadernos rodando em http://localhost:${PORT}`);
+  console.log(`TEC MD Cadernos rodando em http://0.0.0.0:${PORT}`);
 });

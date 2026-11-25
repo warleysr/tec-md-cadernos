@@ -557,10 +557,12 @@ async function openImportModal() {
   listEl.innerHTML = '<span>Buscando arquivos .md no workspace...</span>';
   try {
     const files = await api('/api/workspace-mds');
+    const section = document.getElementById('workspaceMdsSection');
     if (files.length === 0) {
-      listEl.innerHTML = '<span style="color:var(--tec-muted);font-size:13px;">Nenhum arquivo .md encontrado no workspace.</span>';
+      section.style.display = 'none';
       return;
     }
+    section.style.display = 'block';
     listEl.innerHTML = files
       .map(
         (f) => `
@@ -572,7 +574,7 @@ async function openImportModal() {
       )
       .join('');
   } catch (err) {
-    listEl.innerHTML = `<span style="color:var(--tec-red)">${err.message}</span>`;
+    document.getElementById('workspaceMdsSection').style.display = 'none';
   }
 }
 
@@ -591,17 +593,60 @@ window.importWorkspaceMd = async function (relativePath) {
   }
 };
 
-async function handleMdFileUpload(file) {
-  if (!file) return;
-  const content = await file.text();
-  const title = document.getElementById('importTitleInput').value.trim();
+async function handleMdFilesUpload(fileList) {
+  const files = Array.from(fileList || []);
+  if (files.length === 0) return;
+  const titleInput = document.getElementById('importTitleInput');
+  const customTitle = files.length === 1 ? titleInput.value.trim() : '';
+
+  let importedCount = 0;
+  let lastId = null;
+
+  for (const file of files) {
+    try {
+      const content = await file.text();
+      const res = await api('/api/cadernos/import', {
+        method: 'POST',
+        body: JSON.stringify({ filename: file.name, content, title: customTitle || undefined })
+      });
+      importedCount++;
+      lastId = res.id;
+    } catch (err) {
+      showToast(`Erro em ${file.name}: ${err.message}`);
+    }
+  }
+
+  if (importedCount > 0) {
+    closeModal('modalImport');
+    titleInput.value = '';
+    document.getElementById('mdFileInput').value = '';
+    showToast(
+      importedCount === 1
+        ? 'Caderno importado com sucesso!'
+        : `${importedCount} cadernos importados com sucesso!`
+    );
+    await loadCadernos();
+    if (files.length === 1 && lastId) openCaderno(lastId);
+  }
+}
+
+async function handlePasteImport() {
+  const pasteEl = document.getElementById('importPasteInput');
+  const titleEl = document.getElementById('importTitleInput');
+  const content = pasteEl.value.trim();
+  if (!content) {
+    showToast('Cole o conteúdo Markdown antes de importar.');
+    return;
+  }
+  const title = titleEl.value.trim() || 'Caderno Colado';
   try {
     const res = await api('/api/cadernos/import', {
       method: 'POST',
-      body: JSON.stringify({ filename: file.name, content, title: title || undefined })
+      body: JSON.stringify({ filename: `${title}.md`, content, title })
     });
     closeModal('modalImport');
-    document.getElementById('importTitleInput').value = '';
+    pasteEl.value = '';
+    titleEl.value = '';
     showToast(`Importado: ${res.title} (${res.stats.total} questões)`);
     await loadCadernos();
     openCaderno(res.id);
@@ -756,10 +801,11 @@ document.querySelectorAll('.modal-backdrop').forEach((bd) => {
   });
 });
 
-// File upload & drag-drop
+// File upload, paste & drag-drop
 document.getElementById('mdFileInput').addEventListener('change', (e) => {
-  if (e.target.files[0]) handleMdFileUpload(e.target.files[0]);
+  if (e.target.files.length > 0) handleMdFilesUpload(e.target.files);
 });
+document.getElementById('btnImportPaste').addEventListener('click', handlePasteImport);
 const dropzone = document.getElementById('mdDropzone');
 dropzone.addEventListener('dragover', (e) => {
   e.preventDefault();
@@ -769,7 +815,7 @@ dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover
 dropzone.addEventListener('drop', (e) => {
   e.preventDefault();
   dropzone.classList.remove('dragover');
-  if (e.dataTransfer.files[0]) handleMdFileUpload(e.dataTransfer.files[0]);
+  if (e.dataTransfer.files.length > 0) handleMdFilesUpload(e.dataTransfer.files);
 });
 
 // Atalhos de teclado padrão TEC Concursos

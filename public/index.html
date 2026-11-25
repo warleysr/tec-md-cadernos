@@ -198,21 +198,29 @@
       </div>
       <div class="modal-body">
         <div class="dropzone" id="mdDropzone">
-          <p><strong>Arraste e solte</strong> um arquivo <code>.md</code> aqui</p>
+          <p><strong>Arraste e solte</strong> um ou mais arquivos <code>.md</code> aqui</p>
           <p class="dropzone-sub">ou</p>
           <label class="btn-primary" style="cursor:pointer;">
-            Selecionar arquivo .md
-            <input type="file" id="mdFileInput" accept=".md,.markdown,.txt" hidden />
+            Selecionar arquivo(s) .md
+            <input type="file" id="mdFileInput" accept=".md,.markdown,.txt" multiple hidden />
           </label>
         </div>
 
         <div class="form-group" style="margin-top:14px;">
-          <label for="importTitleInput">Nome do Caderno (opcional):</label>
+          <label for="importTitleInput">Nome do Caderno (opcional, para upload único ou texto colado):</label>
           <input type="text" id="importTitleInput" class="text-input" placeholder="Ex: Banco de Dados - CGU" />
         </div>
 
-        <div class="workspace-mds-section">
-          <h4>Arquivos .md encontrados no Workspace</h4>
+        <div class="form-group" style="margin-top:14px;">
+          <label for="importPasteInput">Ou cole o conteúdo Markdown diretamente:</label>
+          <textarea id="importPasteInput" class="note-textarea" rows="4" placeholder="Cole aqui o texto .md do caderno..."></textarea>
+          <div style="margin-top:8px; display:flex; justify-content:flex-end;">
+            <button type="button" class="btn-secondary" id="btnImportPaste">Importar Texto Colado</button>
+          </div>
+        </div>
+
+        <div class="workspace-mds-section" id="workspaceMdsSection" style="display:none;">
+          <h4>Arquivos .md encontrados no Servidor/Workspace</h4>
           <div id="workspaceMdsList" class="workspace-mds-list"></div>
         </div>
       </div>

@@ -318,20 +318,38 @@ app.post('/api/cadernos/:id/reset', (req, res) => {
   res.json({ ok: true, stats: computeCadernoStats(caderno) });
 });
 
-function toLocalDateKey(dateInput) {
+const TIMEZONE = process.env.TZ || 'America/Sao_Paulo';
+
+function getDatePartsInTz(dateInput) {
   const d = new Date(dateInput);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'short'
+  }).formatToParts(d);
+  const map = {};
+  for (const p of parts) map[p.type] = p.value;
+  return {
+    year: Number(map.year),
+    month: Number(map.month),
+    day: Number(map.day),
+    weekday: map.weekday
+  };
+}
+
+function toLocalDateKey(dateInput) {
+  const { year, month, day } = getDatePartsInTz(dateInput);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
 function getWeekStart(dateInput) {
-  const d = new Date(dateInput);
-  const day = d.getDay(); // 0=Dom .. 6=Sab
-  const diff = (day === 0 ? -6 : 1 - day); // Segunda-feira
-  const start = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
-  return start;
+  const { year, month, day, weekday } = getDatePartsInTz(dateInput);
+  const weekdayMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const dayOfWeek = weekdayMap[weekday] ?? 0;
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Segunda-feira
+  return new Date(year, month - 1, day + diff);
 }
 
 function formatDateBr(dateObj) {
